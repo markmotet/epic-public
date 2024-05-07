@@ -122,7 +122,7 @@ const ResultsPagination = ({ pageNum, pageSize, setPageNum, setPageSize, totalRe
 				/>
 				<div className={classes.pageNavigation}>
 					<Button
-						aria-label="go to the last page"
+						aria-label="go to the first page"
 						className={classes.pageJump}
 						disabled={isFirstPage}
 						onClick={() => setPageNum(0)}
