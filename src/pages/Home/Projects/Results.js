@@ -18,6 +18,13 @@ const useStyles = makeStyles()((theme) => ({
 	container: {
 		backgroundColor: "#FFFFFF",
 	},
+	error: {
+		padding: "1rem 3rem",
+		color: theme.palette.error.main,
+	},
+	info: {
+		padding: "1rem 3rem",
+	},
 }));
 
 const ProjectResults = ({ onSearch }) => {
@@ -70,12 +77,12 @@ const ProjectResults = ({ onSearch }) => {
 		},
 	};
 
-	const { data = [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }] } = useProjects(
-		searchTerm,
-		selectedFilters,
-		tableParameters,
-		{ enabled: isSearching },
-	);
+	const {
+		isLoading,
+		isError,
+		isSuccess,
+		data = [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }],
+	} = useProjects(searchTerm, selectedFilters, tableParameters, { enabled: isSearching });
 
 	const projects = useMemo(
 		() =>
@@ -101,7 +108,15 @@ const ProjectResults = ({ onSearch }) => {
 
 	return (
 		<div className={classes.container}>
-			{projects.length > 0 && isSearching && searchTerm && (
+			{isLoading && (
+				<div aria-live="polite" className={classes.info}>
+					{" "}
+					Searching...
+				</div>
+			)}
+			{isError && <div className={classes.error}>Error searching Projects.</div>}
+			{isSuccess && projects.length === 0 && <div className={classes.info}>No results found for "{searchTerm}".</div>}
+			{isSuccess && projects.length > 0 && isSearching && searchTerm && (
 				<Results
 					columns={tableColumns}
 					data={projects}

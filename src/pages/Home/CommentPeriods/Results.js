@@ -18,6 +18,13 @@ const useStyles = makeStyles()((theme) => ({
 	container: {
 		backgroundColor: "#FFFFFF",
 	},
+	error: {
+		padding: "1rem 3rem",
+		color: theme.palette.error.main,
+	},
+	info: {
+		padding: "1rem 3rem",
+	},
 }));
 
 const CommentPeriodResults = () => {
@@ -62,14 +69,14 @@ const CommentPeriodResults = () => {
 		},
 	};
 
-	const { data = [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }] } = usePcps(
-		searchTerm,
-		selectedFilters,
-		tableParameters,
-		{ enabled: isSearching },
-	);
+	const {
+		isLoading,
+		isError,
+		isSuccess,
+		data = [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }],
+	} = usePcps(searchTerm, selectedFilters, tableParameters, { enabled: isSearching });
 
-	const projects = useMemo(
+	const pcps = useMemo(
 		() =>
 			data[0].searchResults.map(({ _id, dateCompleted, dateStarted, metURL, phaseName, project }) => ({
 				dateRange: `${formatDateLongMonth(new Date(dateStarted))} - ${formatDateLongMonth(new Date(dateCompleted))}`,
@@ -89,10 +96,17 @@ const CommentPeriodResults = () => {
 
 	return (
 		<div className={classes.container}>
-			{projects.length > 0 && isSearching && searchTerm && (
+			{isLoading && (
+				<div aria-live="polite" className={classes.info}>
+					Searching...
+				</div>
+			)}
+			{isError && <div className={classes.error}>Error searching Public Comment Periods.</div>}
+			{isSuccess && pcps.length === 0 && <div className={classes.info}>No results found for "{searchTerm}".</div>}
+			{isSuccess && pcps.length > 0 && isSearching && searchTerm && (
 				<Results
 					columns={tableColumns}
-					data={projects}
+					data={pcps}
 					onRowClick={(row) => window.open(getPcpPath(row.metURL, row.key, row.projectId))}
 					order={order}
 					orderBy={orderBy}

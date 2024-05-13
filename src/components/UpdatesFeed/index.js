@@ -18,6 +18,9 @@ const useStyles = makeStyles()((theme) => ({
 		padding: "1rem 1rem 1rem 3rem",
 		flex: "0 0 66%",
 	},
+	error: {
+		color: theme.palette.error.main,
+	},
 	header: {
 		color: "white",
 		display: "flex",
@@ -52,7 +55,7 @@ const useStyles = makeStyles()((theme) => ({
 const UpdatesFeed = ({ onSelectTab }) => {
 	const { classes } = useStyles();
 
-	const { data = [] } = useRecentActivity();
+	const { isLoading, isError, isSuccess, data = [] } = useRecentActivity();
 
 	const updates = useMemo(
 		() =>
@@ -85,11 +88,16 @@ const UpdatesFeed = ({ onSelectTab }) => {
 				</Button>
 			</div>
 			<ul aria-label="Updates list" className={classes.cardList}>
-				{updates.map((update) => (
-					<li key={update.key}>
-						<UpdateCard {...update} />
-					</li>
-				))}
+				{isLoading && <div aria-live="polite"> Loading...</div>}
+				{isError && <div className={classes.error}>Error fetching recent updates.</div>}
+				{isSuccess && data.length === 0 && <div>There are no recent updates.</div>}
+				{isSuccess &&
+					data.length > 0 &&
+					updates.map((update) => (
+						<li key={update.key}>
+							<UpdateCard {...update} />
+						</li>
+					))}
 			</ul>
 		</div>
 	);

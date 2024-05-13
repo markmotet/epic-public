@@ -26,6 +26,9 @@ const useStyles = makeStyles()((theme) => ({
 			padding: "1rem",
 		},
 	},
+	error: {
+		color: theme.palette.error.main,
+	},
 	header: {
 		color: "white",
 		display: "flex",
@@ -107,7 +110,12 @@ const PcpFeed = ({ onSelectTab }) => {
 		},
 	};
 
-	const { data = [{ searchResults: [] }] } = usePcps("", recentPcpsFilter, recentTableParams, { enabled: true });
+	const {
+		isLoading,
+		isError,
+		isSuccess,
+		data = [{ searchResults: [] }],
+	} = usePcps("", recentPcpsFilter, recentTableParams, { enabled: true });
 	const pcps = useMemo(
 		() =>
 			data[0].searchResults.map(({ _id, dateCompleted, dateStarted, project }) => ({
@@ -135,11 +143,16 @@ const PcpFeed = ({ onSelectTab }) => {
 				<div className={classes.content}>
 					<div className={classes.subheader}>Upcoming, open, and recently closed Public Comment Periods:</div>
 					<ul aria-label="Public Comment Period list" className={classes.cardList}>
-						{pcps.map((pcp) => (
-							<li key={pcp.key}>
-								<PcpCard {...pcp} />
-							</li>
-						))}
+						{isLoading && <div aria-live="polite">Loading...</div>}
+						{isError && <div className={classes.error}>Error fetching recent comment periods.</div>}
+						{isSuccess && data[0].meta[0].searchResultsTotal === 0 && <div>There are no recent comment periods.</div>}
+						{isSuccess &&
+							data[0].meta[0].searchResultsTotal > 0 &&
+							pcps.map((pcp) => (
+								<li key={pcp.key}>
+									<PcpCard {...pcp} />
+								</li>
+							))}
 					</ul>
 
 					<div className={classes.footer}>

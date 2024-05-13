@@ -95,11 +95,32 @@ describe("DocumentResults tests", () => {
 		);
 	});
 
+	test("should render indication when loading", () => {
+		useDocuments.mockReturnValue({ isLoading: true, isError: false });
+		render(<DocumentResults />);
+
+		expect(screen.queryByRole("table")).not.toBeInTheDocument();
+		expect(screen.getByText("Searching...")).toBeInTheDocument();
+	});
+
+	test("should render indication of error when error occurs", () => {
+		useDocuments.mockReturnValue({ isError: true, isSuccess: false });
+		render(<DocumentResults />);
+
+		expect(screen.queryByRole("table")).not.toBeInTheDocument();
+		expect(screen.getByText("Error searching Documents.")).toBeInTheDocument();
+	});
+
 	test("should not render the component when there are no search results", () => {
-		useDocuments.mockReturnValue({ searchResults: [], meta: [{ searchResultsTotal: 0 }] });
+		useDocuments.mockReturnValue({
+			isError: false,
+			isSuccess: true,
+			data: [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }],
+		});
 
 		render(<DocumentResults />);
 
 		expect(screen.queryByRole("table")).not.toBeInTheDocument();
+		expect(screen.getByText(`No results found for "${mockSearchState.searchTerm}".`)).toBeInTheDocument();
 	});
 });

@@ -73,11 +73,31 @@ describe("CommentPeriodResults tests", () => {
 		expect(window.open).toHaveBeenCalledWith(mockUsePcpsData.searchResults[0].metURL);
 	});
 
-	test("should not render the component when there are no search results", () => {
-		usePcps.mockReturnValue({ searchResults: [], meta: [{ searchResultsTotal: 0 }] });
-
+	test("should render indication when loading", () => {
+		usePcps.mockReturnValue({ isLoading: true, isError: false });
 		render(<CommentPeriodResults />);
 
+		expect(screen.queryByRole("table")).not.toBeInTheDocument();
+		expect(screen.getByText("Searching...")).toBeInTheDocument();
+	});
+
+	test("should render indication of error when error occurs", () => {
+		usePcps.mockReturnValue({ isError: true, isSuccess: false });
+		render(<CommentPeriodResults />);
+
+		expect(screen.queryByRole("table")).not.toBeInTheDocument();
+		expect(screen.getByText("Error searching Public Comment Periods.")).toBeInTheDocument();
+	});
+
+	test("should not render the component when there are no search results", () => {
+		usePcps.mockReturnValue({
+			isError: false,
+			isSuccess: true,
+			data: [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }],
+		});
+		render(<CommentPeriodResults />);
+
+		expect(screen.getByText(`No results found for "${mockSearchState.searchTerm}".`)).toBeInTheDocument();
 		expect(screen.queryByRole("table")).not.toBeInTheDocument();
 	});
 });

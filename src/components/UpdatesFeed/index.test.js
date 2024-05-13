@@ -48,4 +48,31 @@ describe("UpdatesFeed tests", () => {
 			expect(mockOnSelectTab).not.toHaveBeenCalled();
 		});
 	});
+
+	describe("useRecentActivity hook behavior", () => {
+		test("should render a loading state when the data is being fetched", () => {
+			useRecentActivity.mockReturnValue({ isLoading: true, isError: false, isSuccess: false, data: [] });
+			render(<UpdatesFeed onSelectTab={mockOnSelectTab} />);
+
+			const updatesList = screen.getByRole("list", { name: "Updates list" });
+			expect(updatesList).toBeInTheDocument();
+			expect(within(updatesList).getByText("Loading...")).toBeInTheDocument();
+		});
+
+		test("should render an error state when there is an error fetching the data", () => {
+			useRecentActivity.mockReturnValue({ isLoading: false, isError: true, isSuccess: false, data: [] });
+			render(<UpdatesFeed onSelectTab={mockOnSelectTab} />);
+
+			const updatesList = screen.getByRole("list", { name: "Updates list" });
+			expect(updatesList).toBeInTheDocument();
+			expect(within(updatesList).getByText("Error fetching recent updates.")).toBeInTheDocument();
+		});
+		test("should an indication of no recent updates when there are none", () => {
+			useRecentActivity.mockReturnValue({ isError: false, isSuccess: true, data: [] });
+			render(<UpdatesFeed onSelectTab={mockOnSelectTab} />);
+
+			expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+			expect(screen.getByText("There are no recent updates.")).toBeInTheDocument();
+		});
+	});
 });

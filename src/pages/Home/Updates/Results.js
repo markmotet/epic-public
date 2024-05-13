@@ -17,6 +17,13 @@ const useStyles = makeStyles()((theme) => ({
 	container: {
 		backgroundColor: "#FFFFFF",
 	},
+	error: {
+		padding: "1rem 3rem",
+		color: theme.palette.error.main,
+	},
+	info: {
+		padding: "1rem 3rem",
+	},
 }));
 
 const UpdatesResults = () => {
@@ -71,12 +78,12 @@ const UpdatesResults = () => {
 		[listsData],
 	);
 
-	const { data: updatesData = [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }] } = useUpdates(
-		searchTerm,
-		selectedFilters,
-		tableParameters,
-		{ enabled: isSearching },
-	);
+	const {
+		isLoading,
+		isError,
+		isSuccess,
+		data: updatesData = [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }],
+	} = useUpdates(searchTerm, selectedFilters, tableParameters, { enabled: isSearching });
 
 	const updates = useMemo(() => {
 		const getConstant = (id) => {
@@ -103,7 +110,15 @@ const UpdatesResults = () => {
 
 	return (
 		<div className={classes.container}>
-			{updates.length > 0 && isSearching && searchTerm && (
+			{isLoading && (
+				<div aria-live="polite" className={classes.info}>
+					{" "}
+					Searching...
+				</div>
+			)}
+			{isError && <div className={classes.error}>Error searching Updates.</div>}
+			{isSuccess && updates.length === 0 && <div className={classes.info}>No results found for "{searchTerm}".</div>}
+			{isSuccess && updates.length > 0 && isSearching && searchTerm && (
 				<Results
 					columns={tableColumns}
 					data={updates}

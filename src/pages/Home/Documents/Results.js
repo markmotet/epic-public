@@ -15,9 +15,16 @@ import { getDocumentDownloadLink, getProjectPath } from "services/navigation";
 
 import { TABLE_DEFAULTS } from "constants/filters";
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()((theme) => ({
 	container: {
 		backgroundColor: "#FFFFFF",
+	},
+	error: {
+		padding: "1rem 3rem",
+		color: theme.palette.error.main,
+	},
+	info: {
+		padding: "1rem 3rem",
 	},
 }));
 
@@ -90,12 +97,12 @@ const DocumentResults = () => {
 		[listsData],
 	);
 
-	const { data: documentsData = [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }] } = useDocuments(
-		searchTerm,
-		selectedFilters,
-		tableParameters,
-		{ enabled: isSearching },
-	);
+	const {
+		isLoading,
+		isError,
+		isSuccess,
+		data: documentsData = [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }],
+	} = useDocuments(searchTerm, selectedFilters, tableParameters, { enabled: isSearching });
 
 	const documents = useMemo(() => {
 		const getConstant = (id) => {
@@ -138,7 +145,14 @@ const DocumentResults = () => {
 
 	return (
 		<div className={classes.container}>
-			{documents?.length > 0 && isSearching && searchTerm && (
+			{isLoading && (
+				<div aria-live="polite" className={classes.info}>
+					Searching...
+				</div>
+			)}
+			{isError && <div className={classes.error}>Error searching Documents.</div>}
+			{isSuccess && documents.length === 0 && <div className={classes.info}>No results found for "{searchTerm}".</div>}
+			{isSuccess && documents?.length > 0 && isSearching && searchTerm && (
 				<Results
 					columns={tableColumns}
 					data={documents}
