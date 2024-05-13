@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Trigger Webhook Openshift Build
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Merge occurred on default branch"}' ${{ secrets.WEBHOOK_URL }}
+          curl -X POST -H 'X-GitHub-Event: push' -H 'Content-type: application/json' --data '{"text":"Merge occurred on default branch"}' ${{ secrets.WEBHOOK_URL }}
