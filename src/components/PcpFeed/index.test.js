@@ -76,7 +76,7 @@ describe("PcpFeed tests", () => {
 			usePcps.mockReturnValue({
 				isError: false,
 				isSuccess: true,
-				data: [{ searchResults: [], meta: [{ searchResultsTotal: 0 }] }],
+				data: [{ searchResults: [], meta: [] }],
 			});
 			render(<PcpFeed onSelectTab={mockOnSelectTab} />);
 

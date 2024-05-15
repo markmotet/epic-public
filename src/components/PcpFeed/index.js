@@ -145,9 +145,9 @@ const PcpFeed = ({ onSelectTab }) => {
 					<ul aria-label="Public Comment Period list" className={classes.cardList}>
 						{isLoading && <div aria-live="polite">Loading...</div>}
 						{isError && <div className={classes.error}>Error fetching recent comment periods.</div>}
-						{isSuccess && data[0].meta[0].searchResultsTotal === 0 && <div>There are no recent comment periods.</div>}
+						{isSuccess && data[0].searchResults.length === 0 && <div>There are no recent comment periods.</div>}
 						{isSuccess &&
-							data[0].meta[0].searchResultsTotal > 0 &&
+							data[0].meta[0]?.searchResultsTotal > 0 &&
 							pcps.map((pcp) => (
 								<li key={pcp.key}>
 									<PcpCard {...pcp} />
