@@ -1,0 +1,66 @@
+name: Deploy to Test
+
+on:
+  repository_dispatch:
+    # Trigger from repository dispatch workflow in promotion/test branch
+    types: [trigger-test-deploy]
+
+env:
+  OPENSHIFT_NAMESPACE: 6cdc9e-tools
+  IMAGE_NAME: epic-public
+  PROD_PROMO_BRANCH: promotion/prod
+  PROD_PROMO_PR_BRANCH: promotion/prod-pr
+
+jobs:
+  deploy:
+    name: Deploy to Test
+    runs-on: ubuntu-20.04
+    outputs:
+      COMMIT_SHA: ${{ steps.read-hash.outputs.SHA }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: "promotion/test"
+      - name: Retrieve previous commit hash
+        id: read-hash
+        run: echo "::set-output name=SHA::`jq -r '.commit' state.json`"
+      - name: Log into OpenShift
+        uses: redhat-actions/oc-login@v1
+        with:
+          openshift_server_url: ${{ secrets.OPENSHIFT_URL }}
+          openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+          namespace: ${{ env.OPENSHIFT_NAMESPACE }}
+      - name: Tag image
+        run: |
+          oc -n ${{ env.OPENSHIFT_NAMESPACE }} tag --reference-policy='local' ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:test
+  promotion:
+    name: Creates Promotion to Prod Pull Request
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout promotion/prod
+        uses: actions/checkout@v2
+        with: 
+          ref: "${{ env.PROD_PROMO_BRANCH }}"
+      - name: Update state.json
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{github.actor}}@users.noreply.github.com"
+          git checkout -B ${{ env.PROD_PROMO_PR_BRANCH }}
+          git reset --hard ${{ env.PROD_PROMO_BRANCH }}
+          echo $(jq '.commit="${{ needs.deploy.outputs.COMMIT_SHA }}"' state.json) > state.json
+          git commit -am "Promote commit ${{ needs.deploy.outputs.COMMIT_SHA }} to Production"
+          git push --force origin ${{ env.PROD_PROMO_PR_BRANCH }}          
+      - name: Create Pull Request
+        uses: repo-sync/pull-request@v2
+        with:
+          source_branch: ${{ env.PROD_PROMO_PR_BRANCH }}
+          destination_branch: ${{ env.PROD_PROMO_BRANCH }}
+          pr_title: "Deploy to Production Environment"
+          pr_body: |
+            :crown: *An automated PR*
+            This PR triggers an deployment to Production once it's fully merged.
+          pr_label: "auto-pr,prod env,pipeline"
+          pr_draft: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}

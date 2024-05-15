@@ -5,6 +5,10 @@ on:
     branches:
       - develop # replace with your default branch name
 
+env:
+  TEST_PROMO_BRANCH: promotion/test
+  TEST_PROMO_PR_BRANCH: promotion/test-pr
+
 jobs:
   webhook:
     runs-on: ubuntu-latest
@@ -12,3 +16,41 @@ jobs:
       - name: Trigger Webhook Openshift Build
         run: |
           curl -X POST -H 'X-GitHub-Event: push' -H 'Content-type: application/json' --data '{"text":"Merge occurred on default branch"}' ${{ secrets.WEBHOOK_URL }}
+  promotion:
+    name: Create Promotion to Test Pull Request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Get Short SHA
+        id: short-sha
+        run: echo "::set-output name=SHA::$(git rev-parse --short HEAD)"
+      - name: Checkout promotion/test
+        uses: actions/checkout@v2
+        with:
+          ref: "${{ env.TEST_PROMO_BRANCH }}"
+      - name: Update state.json
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{github.actor}}@users.noreply.github.com"
+
+          git checkout -B ${{ env.TEST_PROMO_PR_BRANCH }}
+          git reset --hard ${{ env.TEST_PROMO_BRANCH }}
+
+          echo $(jq '.commit="${{ steps.short-sha.outputs.SHA }}"' state.json) > state.json
+
+          git commit -am "Promote commit ${{ steps.short-sha.outputs.SHA }} to Test"
+          git push --force origin ${{ env.TEST_PROMO_PR_BRANCH }}
+      - name: Create Pull Request
+        uses: repo-sync/pull-request@v2
+        with:
+          source_branch: ${{ env.TEST_PROMO_PR_BRANCH }}
+          destination_branch: ${{ env.TEST_PROMO_BRANCH }}
+          pr_title: "Deploy to Test Environment"
+          pr_body: |
+            :crown: *An automated PR*
+
+            This PR triggers an deployment to Test once it's fully merged.
+          pr_label: "auto-pr,test env,pipeline"
+          pr_draft: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
